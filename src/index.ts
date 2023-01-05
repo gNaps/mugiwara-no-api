@@ -13,13 +13,17 @@ const server = fastify({
 });
 dotenv.config();
 
-try {
-  mongoose.connect(process.env.MONGO_URI || "", {
-    dbName: process.env.MONGO_DB_NAME || "test",
-  });
-} catch (error) {
-  console.error(error);
-}
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGO_URI || "", {
+      dbName: process.env.MONGO_DB_NAME || "test",
+    });
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+  } catch (error) {
+    console.log(error);
+    process.exit(1);
+  }
+};
 
 server.register(cors);
 
@@ -28,13 +32,15 @@ server.register(episodesController, { prefix: "/episodes" });
 server.register(chaptersController, { prefix: "/chapters" });
 server.register(volumesController, { prefix: "/volumes" });
 
-server.listen(
-  { port: 8080, host: process.env.ENV_DEVELOP ? "127.0.0.1" : "0.0.0.0" },
-  (error: any, address: any) => {
-    if (error) {
-      console.error(error);
-      process.exit(1);
+connectDB().then(() => {
+  server.listen(
+    { port: 8080, host: process.env.ENV_DEVELOP ? "127.0.0.1" : "0.0.0.0" },
+    (error: any, address: any) => {
+      if (error) {
+        console.error(error);
+        process.exit(1);
+      }
+      console.log(`Server running on ${address}`);
     }
-    console.log(`Server running on ${address}`);
-  }
-);
+  );
+});
